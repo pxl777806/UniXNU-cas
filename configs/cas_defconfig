@@ -9,6 +9,7 @@
 # without which the original AMFI panics with "No PMGR". On the QEMU board the same kernel draws nothing through XNU's
 # video console despite -v: after the entry probe bars, the panic screen is the only kernel output on the frame buffer.
 
+CONFIG_XNU_BUILD_ARCHIVES=y
 CONFIG_XNU_SOURCE_CORECRYPTO14=y
 CONFIG_XNU_SOURCE_PTHREAD=y
 CONFIG_XNU_ARM_DT_PLATFORM=y
