@@ -197,6 +197,13 @@ def assemble_c(source, va, workdir, symbols):
                 for base, size, _, _ in SEGMENTS):
             raise SystemExit(f'Missing or invalid diagnostic symbol {name}')
         definitions.append(f'-D{macro}={address:#x}UL')
+    # Optional: the sheng PMGR bridge observation array (package/ShengPlatformPower.cpp).
+    observation = symbols.get('_sheng_pmgr_observation')
+    if observation is not None:
+        if not any(base <= observation and observation + 16 * 8 <= base + size
+                   for base, size, _, _ in SEGMENTS):
+            raise SystemExit('Invalid _sheng_pmgr_observation')
+        definitions.append(f'-DSHENG_OBS={observation:#x}UL')
     # Optional: the board's banner buffer for the panic message (kits/sheng/BootProgress.c); kernels without it get 0 (no copy).
     text = symbols.get('_boot_progress_panic_text')
     if text is not None:
