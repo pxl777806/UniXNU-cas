@@ -51,6 +51,7 @@ archives = [
   "build-libpthread-kernel.py",
   "build-link-stubs.py",
   "build-platform-power.py",
+  "build-ufs-bindings.py",
 ]
 
 # The same original kernelcache and prelink selection as UniXNU-sheng: the target image is the same.
