@@ -268,6 +268,19 @@ __attribute__((noreturn, used, section(".text.b_main"))) void panic_screen_main 
   (void)MAX_MEM;
   hex (&g, "\npages=", *(volatile const u32 *)PAGE_TOTAL);
   hex (&g, "\nfree=", *(volatile const u32 *)PAGE_FREE);
+  /* The sheng PMGR bridge observation array, when this kernel carries it. */
+#if defined(SHENG_OBS) && SHENG_OBS
+  {
+    volatile const u64 *obs = (volatile const u64 *)SHENG_OBS;
+    hex (&g, "\nobs15=", obs[15]);
+    hex (&g, " obs0=", obs[0]);
+    hex (&g, " obs1=", obs[1]);
+    hex (&g, "\nobs2=", obs[2]);
+    hex (&g, " obs3=", obs[3]);
+    hex (&g, " obs9=", obs[9]);
+    hex (&g, " obs11=", obs[11]);
+  }
+#endif
   /* The raw argument slots are not dumped: the formatted message above already carries them (room for the PANIC_TEXT copy). */
   mark[0] = 0xC0FFEE11u;
   mark[1] = 0x5CEEDA7Au;
