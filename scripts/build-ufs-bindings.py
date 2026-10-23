@@ -10,8 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'build/native-ufs'
 OBJ = OUT / 'NativeUfs.o'
 ARCHIVE = OUT / 'libNativeUfs.a'
-CANDIDATES = (ROOT / '.cache/firmware/kernelcache.macho/kernelcache.release.ipad7.decompressed',
-              ROOT / '.cache/firmware/kernelcache/kernelcache.release.ipad7.decompressed')
+CACHE = ROOT / '.cache/firmware/kernelcache.macho/kernelcache.release.ipad7.decompressed'
 
 
 def nm(path, *extra):
@@ -30,9 +29,13 @@ wanted = sorted(name for name in undefined if 'IOBlockStorageDevice' in name)
 if not wanted:
     print('NativeUfs: no unsupplied IOBlockStorageDevice imports; nothing to bind')
     raise SystemExit(0)
-kernel = next((path for path in CANDIDATES if path.is_file()), None)
-if kernel is None:
-    raise SystemExit('The original kernelcache is not in the IPSW cache; run unixnu ipsw fetch first')
+if CACHE.is_file():
+    kernel = CACHE
+else:
+    cached = sorted(ROOT.parents[1].glob('ipsw/*/kernelcache.decompressed'))
+    if not cached:
+        raise SystemExit('The original kernelcache is not in the IPSW cache; run unixnu ipsw fetch first')
+    kernel = cached[0]
 defined = {}
 for line in nm(kernel).splitlines():
     parts = line.split()
