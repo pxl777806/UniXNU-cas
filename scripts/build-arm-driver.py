@@ -176,4 +176,5 @@ if component == 'NativeUfs':
         subprocess.run(['xcrun', 'clang', '-target', 'arm64-apple-ios17.0', '-Werror', '-Wno-incompatible-sysroot', '-c', str(asm), '-o', str(out / 'ufs-original-bindings.o')], check=True)
         archive.unlink(missing_ok=True)
         subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(destination), str(out / 'ufs-original-bindings.o')], check=True)
-        print('NativeUfs: bound %d original storage symbols' % len(wanted))print(f'{component}: -Werror build and actual ARM64/iOS 17 object audit passed')
+        print('NativeUfs: bound %d original storage symbols' % len(wanted))
+print(f'{component}: -Werror build and actual ARM64/iOS 17 object audit passed')
