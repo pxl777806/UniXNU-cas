@@ -90,6 +90,24 @@ if component == 'NativeUfs':
                 lines[index] = '#define %s 0x%05x\n' % (macro, value)
         gcc_text = ''.join(lines)
     gcc_header.write_text(gcc_text)
+    # Upstream oversight: read() uses timerTicks() and native_ufs_read_ticks, defined only inside the
+    # NATIVE_VERIFIED_BLOCK block. sheng always defines it; a plain-mode build needs this guard.
+    ufs_source = ROOT / 'drivers/NativeUfs/NativeUfs.cpp'
+    ufs_text = ufs_source.read_text()
+    old_read = ('      uint64_t t0 = timerTicks ();\n'
+                '      IOReturn r = hostRead4k (0, lba, blocks, out);\n'
+                '      __atomic_fetch_add (&native_ufs_read_ticks, timerTicks () - t0, __ATOMIC_RELAXED);')
+    new_read = ('#if defined(NATIVE_VERIFIED_BLOCK) && NATIVE_VERIFIED_BLOCK\n'
+                '      uint64_t t0 = timerTicks ();\n'
+                '      IOReturn r = hostRead4k (0, lba, blocks, out);\n'
+                '      __atomic_fetch_add (&native_ufs_read_ticks, timerTicks () - t0, __ATOMIC_RELAXED);\n'
+                '#else\n'
+                '      IOReturn r = hostRead4k (0, lba, blocks, out);\n'
+                '#endif')
+    if ufs_text.count(old_read) != 1:
+        raise SystemExit('The NativeUfs read() timing block was not uniquely identified; refusing to patch')
+    ufs_source.write_text(ufs_text.replace(old_read, new_read))
+    print('NativeUfs: read() timing wrapped in the verified-block guard')
     if '0x77010' not in gcc_header.read_text():
         raise SystemExit('The SM8250 GCC offsets were not applied to drivers/NativeUfs/GccUfs.h')
     print('NativeUfs: SM8250 GCC offsets applied')
