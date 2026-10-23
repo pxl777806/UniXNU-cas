@@ -46,6 +46,7 @@ archives = [
   "build-arm-driver.py ArmDTPlatform",
   "build-arm-driver.py ArmCpu",
   "build-arm-driver.py NativeAES",
+  "build-arm-driver.py NativeUfs",
   "build-native-aes-bindings.py",
   "build-libpthread-kernel.py",
   "build-link-stubs.py",
@@ -162,6 +163,8 @@ kernel_args = [
   "sheng-pmgr=2",
   "-no_slto_panic",
   "ml-timeout-lock-panic-scale=40",
+  "native-ufs-root=1",
+  "native-ufs-diagnostics=1",
 ]
 
 [payload.adt]
