@@ -2,6 +2,8 @@
 """Compile the generic platform expert against the actual source-kernel ABI."""
 import argparse
 import json
+import shutil
+import sys
 from pathlib import Path
 import struct
 import subprocess
@@ -145,4 +147,33 @@ if deployment != (2, 0x110000):
 archive = out / ('lib' + component + '.a')
 archive.unlink(missing_ok=True)
 subprocess.run(['xcrun', 'ar', 'rcs', archive, destination], check=True)
-print(f'{component}: -Werror build and actual ARM64/iOS 17 object audit passed')
+if component == 'NativeUfs':
+    blob = None
+    for base in (ROOT, ROOT.parents[1], ROOT.parents[2]):
+        found = sorted(base.glob('ipsw/*/kernelcache.decompressed'))
+        if found:
+            blob = found[-1].read_bytes()
+            break
+    if blob is None:
+        print('NativeUfs: no kernelcache yet; skipping the storage binding')
+    else:
+        sys.path.insert(0, str(ROOT / 'kits/NativePrelink'))
+        import native_prelink as np
+        exports = {}
+        for va, names in np.exports(blob, np.macho(blob)).items():
+            for name in names:
+                exports[name] = va
+        undefined = set()
+        for line in subprocess.run(['llvm-nm', '-u', str(destination)], capture_output=True, text=True).stdout.splitlines():
+            if line.strip():
+                undefined.add(line.split()[-1])
+        wanted = sorted(n for n in undefined if 'IOBlockStorageDevice' in n)
+        missing = [n for n in wanted if n not in exports]
+        if missing:
+            raise SystemExit('NativeUfs: kernelcache lacks %s (%d exports)' % (', '.join(missing[:3]), len(exports)))
+        asm = out / 'ufs-original-bindings.S'
+        asm.write_text(''.join('.globl %s\n.set %s, %#x\n' % (n, n, exports[n]) for n in wanted))
+        subprocess.run(['xcrun', 'clang', '-target', 'arm64-apple-ios17.0', '-Werror', '-Wno-incompatible-sysroot', '-c', str(asm), '-o', str(out / 'ufs-original-bindings.o')], check=True)
+        archive.unlink(missing_ok=True)
+        subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(destination), str(out / 'ufs-original-bindings.o')], check=True)
+        print('NativeUfs: bound %d original storage symbols' % len(wanted))print(f'{component}: -Werror build and actual ARM64/iOS 17 object audit passed')
