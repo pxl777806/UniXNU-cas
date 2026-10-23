@@ -74,6 +74,26 @@ if component in ('NativeVirtioBlock', 'NativeRamBlock', 'NativeUfs'):
         command += ['-DNATIVE_VERIFIED_BLOCK_INJECT_FAULT=1']
     if args.verified_root_bundle:
         command += ['-DNATIVE_VERIFIED_BLOCK_MULTI_POLICY=1']
+# cas is SM8250: rewrite the driver SM8550 GCC register offsets with the SM8250 ones, transcribed from the
+# halt_reg of each UFS branch in the public Linux gcc-sm8250.c clock driver. Both SoCs put the UFS PHY block at 0x77000.
+if component == 'NativeUfs':
+    gcc_header = ROOT / 'drivers/NativeUfs/GccUfs.h'
+    gcc_text = gcc_header.read_text()
+    for macro, value in (('GCC_UFS_PHY_AXI_ENABLE', 0x77010), ('GCC_UFS_PHY_AHB_ENABLE', 0x77018),
+                         ('GCC_UFS_PHY_TX_SYMBOL0_ENABLE', 0x7701C), ('GCC_UFS_PHY_RX_SYMBOL0_ENABLE', 0x77020),
+                         ('GCC_UFS_PHY_UNIPRO_CORE_ENABLE', 0x7705C), ('GCC_UFS_PHY_ICE_CORE_ENABLE', 0x77064),
+                         ('GCC_UFS_PHY_PHY_AUX_ENABLE', 0x7709C), ('GCC_UFS_PHY_RX_SYMBOL1_ENABLE', 0x770B8),
+                         ('GCC_AGGRE_UFS_PHY_AXI_ENABLE', 0x770CC)):
+        lines = gcc_text.splitlines(True)
+        for index, line in enumerate(lines):
+            if line.startswith('#define ' + macro + ' '):
+                lines[index] = '#define %s 0x%05x
+' % (macro, value)
+        gcc_text = ''.join(lines)
+    gcc_header.write_text(gcc_text)
+    if '0x77010' not in gcc_header.read_text():
+        raise SystemExit('The SM8250 GCC offsets were not applied to drivers/NativeUfs/GccUfs.h')
+    print('NativeUfs: SM8250 GCC offsets applied')
 if component == 'NativeUfs':
     command += ['-I', str(ROOT / 'kits/VerifiedRoot/include'), '-I', str(ROOT / 'drivers/NativeVirtioBlock'),
                 '-DNATIVE_VERIFIED_BLOCK=1', '-DNATIVE_VERIFIED_BLOCK_MULTI_POLICY=1', '-mgeneral-regs-only']
