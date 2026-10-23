@@ -87,8 +87,7 @@ if component == 'NativeUfs':
         lines = gcc_text.splitlines(True)
         for index, line in enumerate(lines):
             if line.startswith('#define ' + macro + ' '):
-                lines[index] = '#define %s 0x%05x
-' % (macro, value)
+                lines[index] = '#define %s 0x%05x\n' % (macro, value)
         gcc_text = ''.join(lines)
     gcc_header.write_text(gcc_text)
     if '0x77010' not in gcc_header.read_text():
