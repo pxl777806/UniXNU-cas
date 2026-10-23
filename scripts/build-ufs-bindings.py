@@ -32,13 +32,13 @@ if not wanted:
 if CACHE.is_file():
     kernel = CACHE
 else:
-    cached = sorted(ROOT.parents[1].glob('ipsw/*/kernelcache.decompressed'))
+    cached = []
+    for base in (ROOT, ROOT.parents[1], ROOT.parents[2]):
+        cached += sorted(base.glob('ipsw/*/kernelcache.decompressed'))
     if not cached:
-        # The bootstrap pass runs before the driver fetches the IPSW members, so the first pass cannot bind.
-        # Its archive only serves that pass's tolerated link; the second pass binds for real.
         print('NativeUfs: no kernelcache yet (bootstrap pass); skipping the binding')
         raise SystemExit(0)
-    kernel = cached[0]
+    kernel = cached[-1]
 defined = {}
 for line in nm(kernel).splitlines():
     parts = line.split()
