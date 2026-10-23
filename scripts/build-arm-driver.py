@@ -95,7 +95,7 @@ if component == 'NativeUfs':
     print('NativeUfs: SM8250 GCC offsets applied')
 if component == 'NativeUfs':
     command += ['-I', str(ROOT / 'kits/VerifiedRoot/include'), '-I', str(ROOT / 'drivers/NativeVirtioBlock'),
-                '-DNATIVE_VERIFIED_BLOCK=1', '-DNATIVE_VERIFIED_BLOCK_MULTI_POLICY=1', '-mgeneral-regs-only']
+                '-mgeneral-regs-only']  # cas has no verified-root chain yet: plain mode
 if component=='NativeOfflineGPU':
     command += ['-I',str(ROOT/'drivers/NativeVirtioConsole')]
 if component in ('NativeLegacyDisplay','NativeHidInput'):
