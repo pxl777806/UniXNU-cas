@@ -180,7 +180,12 @@ def assemble_c(source, va, workdir, symbols):
     objcopy = shutil.which('llvm-objcopy') or '/opt/homebrew/opt/llvm/bin/llvm-objcopy'
     nm = shutil.which('llvm-nm') or '/opt/homebrew/opt/llvm/bin/llvm-nm'
     # UNIXNU_UEFI is the Mu-Silicium checkout when the unixnu driver runs this script.
-    font_dir = Path(os.environ.get('UNIXNU_UEFI') or ROOT / 'uefi-sheng') / 'Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib'
+    candidates = [ROOT / 'uefi-sheng/Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib',
+                  ROOT / 'scripts']
+    if os.environ.get('UNIXNU_UEFI'):
+        candidates.insert(0, Path(os.environ['UNIXNU_UEFI'])
+                          / 'Silicon/Silicium/SiliciumPkg/Library/FrameBufferSerialPortLib')
+    font_dir = next((c for c in candidates if (c / 'Font.h').is_file()), candidates[-1])
     obj, elf, binary = (workdir / name for name in ('panic.o', 'panic.elf', 'panic.bin'))
     definitions = []
     for macro, name, width in (('MAX_MEM', '_max_mem', 8),
